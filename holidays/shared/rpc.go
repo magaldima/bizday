@@ -16,9 +16,9 @@ func (m *RPCClient) IsHoliday(date api.Date) bool {
 	return resp
 }
 
-func (m *RPCClient) HolidaysBetween(start api.Date, end api.Date) int32 {
+func (m *RPCClient) Delta(start api.Date, end api.Date) int32 {
 	var resp int32
-	m.client.Call("Plugin.HolidaysBetween", map[string]interface{}{
+	m.client.Call("Plugin.Delta", map[string]interface{}{
 		"start": start,
 		"end":   end,
 	}, &resp)
@@ -36,6 +36,6 @@ func (m *RPCServer) IsHoliday(args map[string]interface{}, resp *interface{}) bo
 	return m.Impl.IsHoliday(args["date"].(api.Date))
 }
 
-func (m *RPCServer) HolidaysBetween(args map[string]interface{}, resp *interface{}) int32 {
-	return m.Impl.HolidaysBetween(args["start"].(api.Date), args["end"].(api.Date))
+func (m *RPCServer) Delta(args map[string]interface{}, resp *interface{}) int32 {
+	return m.Impl.Delta(args["start"].(api.Date), args["end"].(api.Date))
 }

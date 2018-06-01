@@ -15,7 +15,10 @@ PATH="${PROJECT_ROOT}/dist:${PATH}"
 go build -i -o dist/protoc-gen-go ./vendor/github.com/golang/protobuf/protoc-gen-go
 GOPROTOBINARY=go
 
-PROTO_FILES=$(find $PROJECT_ROOT \( -name "*.proto" -and -path '*/pkg/*' -or -name "*.proto" -and -path '*/holidays/*' -or -path '*/calendar/*' -and -name "*.proto" \))
+# Initialize the api proto
+#protoc -I${PROJECT_ROOT} -I=api -I=$GOPATH/src --${GOPROTOBINARY}_out=plugins:grpc:$GOPATH/src api/bizday.proto
+
+PROTO_FILES=$(find $PROJECT_ROOT \( -name "*.proto" -and -path '*/holidays/*' -or -path '*/calendar/*' -and -name "*.proto" \))
 for i in ${PROTO_FILES}; do
     protoc \
         -I${PROJECT_ROOT} \

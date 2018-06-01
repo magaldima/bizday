@@ -1,0 +1,20 @@
+syntax = "proto3";
+package calendar;
+
+import "github.com/magaldima/bizday/api/bizday.proto";
+
+message BinaryDateRequest {
+    github.com.magaldima.bizday.api.Date start = 1;
+    github.com.magaldima.bizday.api.Date end = 2;
+}
+
+message DayCountFractionResponse {
+    double value = 1;
+}
+
+service Calendar {
+    rpc DaysInYear(github.com.magaldima.bizday.api.Date) returns (github.com.magaldima.bizday.api.NumberOfDaysResponse);
+    rpc DaysInMonth(github.com.magaldima.bizday.api.Date) returns (github.com.magaldima.bizday.api.NumberOfDaysResponse);
+    rpc Delta(BinaryDateRequest) returns (github.com.magaldima.bizday.api.NumberOfDaysResponse);
+    rpc Alpha(BinaryDateRequest) returns (DayCountFractionResponse);
+}

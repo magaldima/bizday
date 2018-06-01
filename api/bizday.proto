@@ -32,14 +32,15 @@ message Date {
     int32 day = 3;
 }
 
-message HolidayCalendar {
-    string name = 1;
-    repeated Date holidays = 2;
+message Calendar {
+    string holiday = 1;
+    string dayCountBasis = 2;
+    repeated Date holidays = 3;
 }
 
 // Binary Messages
 message BinaryDateRequest {
-    HolidayCalendar cal = 1;
+    Calendar cal = 1;
     Date start = 2;
     Date end = 3;
 }
@@ -50,7 +51,7 @@ message NumberOfDaysResponse {
 
 // Unary Date Retrieval Messages
 message UnaryDateRequest {
-    HolidayCalendar cal = 1;
+    Calendar cal = 1;
     Date date = 2;
 }
 
@@ -65,7 +66,7 @@ message UnaryDateResponse {
 // Unary Date Transformation
 // offset can be positive or negative resulting in an addition or substraction of days
 message UnaryTransformRequest {
-    HolidayCalendar cal = 1;
+    Calendar cal = 1;
     Date date = 2;
     int32 offset = 3;
 }

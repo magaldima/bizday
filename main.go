@@ -8,6 +8,8 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/magaldima/bizday/calendar"
+
 	"github.com/magaldima/bizday/holidays/shared"
 
 	"github.com/hashicorp/go-plugin"
@@ -27,7 +29,22 @@ func init() {
 func main() {
 	flag.Parse()
 
-	client := plugin.NewClient(&plugin.ClientConfig{
+	cClient := plugin.NewClient(&plugin.ClientConfig{
+		HandshakeConfig: calendar.Handshake,
+		Plugins:         calendar.PluginMap,
+		Cmd:             exec.Command("sh", "-c", os.Getenv("CALENDAR_PLUGIN")),
+		AllowedProtocols: []plugin.Protocol{
+			plugin.ProtocolNetRPC, plugin.ProtocolGRPC,
+		},
+	})
+	defer cClient.Kill()
+
+	calendarClient, err := cClient.Client()
+	if err != nil {
+		panic(err)
+	}
+
+	hClient := plugin.NewClient(&plugin.ClientConfig{
 		HandshakeConfig: shared.Handshake,
 		Plugins:         shared.PluginMap,
 		Cmd:             exec.Command("sh", "-c", os.Getenv("HOLIDAY_PLUGIN")),
@@ -35,9 +52,9 @@ func main() {
 			plugin.ProtocolNetRPC, plugin.ProtocolGRPC,
 		},
 	})
-	defer client.Kill()
+	defer hClient.Kill()
 
-	rpcClient, err := client.Client()
+	holidayClient, err := hClient.Client()
 	if err != nil {
 		panic(err)
 	}
@@ -47,7 +64,7 @@ func main() {
 		panic(err)
 	}
 	grpcServer := grpc.NewServer()
-	api.RegisterDateCalcServer(grpcServer, pkg.New(rpcClient))
+	api.RegisterDateCalcServer(grpcServer, pkg.New(calendarClient, holidayClient))
 	// use TLS
 	log.Printf("starting bizday server on port %d", port)
 	grpcServer.Serve(lis)

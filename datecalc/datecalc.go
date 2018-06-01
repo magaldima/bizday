@@ -16,6 +16,18 @@ var Weekdays = []time.Weekday{
 	time.Saturday,
 }
 
+type quarter struct {
+	month int
+	day   int
+}
+
+var (
+	Q1 = quarter{3, 31}
+	Q2 = quarter{6, 30}
+	Q3 = quarter{9, 30}
+	Q4 = quarter{12, 31}
+)
+
 // Date returns the Time corresponding to
 //	yyyy-mm-dd 00:00:00 + 0 nanoseconds
 // in Universal Coordinated Time (UTC)

@@ -20,8 +20,9 @@ func main() {
 	client := api.NewDateCalcClient(conn)
 
 	binaryDateRequest := api.BinaryDateRequest{
-		Cal: &api.HolidayCalendar{
-			Name: "us-holiday",
+		Cal: &api.Calendar{
+			Holiday:       "US",
+			DayCountBasis: "30_360",
 		},
 		Start: &api.Date{
 			Year:  2018,

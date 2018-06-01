@@ -19,8 +19,8 @@ func (m *GRPCClient) IsHoliday(date api.Date) bool {
 	return resp.GetOk()
 }
 
-func (m *GRPCClient) HolidaysBetween(start api.Date, end api.Date) int32 {
-	resp, err := m.client.HolidaysBetween(context.Background(), &holidays.BinaryDateRequest{
+func (m *GRPCClient) Delta(start api.Date, end api.Date) int32 {
+	resp, err := m.client.Delta(context.Background(), &holidays.BinaryDateRequest{
 		Start: &start,
 		End:   &end,
 	})
@@ -41,7 +41,7 @@ func (m *GRPCServer) IsHoliday(ctx context.Context, date *api.Date) (*holidays.B
 	return &holidays.BoolResponse{Ok: ok}, nil
 }
 
-func (m *GRPCServer) HolidaysBetween(ctx context.Context, req *holidays.BinaryDateRequest) (*api.NumberOfDaysResponse, error) {
-	days := m.Impl.HolidaysBetween(*req.Start, *req.End)
+func (m *GRPCServer) Delta(ctx context.Context, req *holidays.BinaryDateRequest) (*api.NumberOfDaysResponse, error) {
+	days := m.Impl.Delta(*req.Start, *req.End)
 	return &api.NumberOfDaysResponse{Days: days}, nil
 }

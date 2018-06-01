@@ -1,13 +1,7 @@
 syntax = "proto3";
-option go_package = "github.com/magaldima/bizday/holidays";
-
 package holidays;
 
 import "github.com/magaldima/bizday/api/bizday.proto";
-
-message UnaryDateRequest {
-    github.com.magaldima.bizday.api.Date date = 1;
-}
 
 message BinaryDateRequest {
     github.com.magaldima.bizday.api.Date start = 1;
@@ -20,5 +14,5 @@ message BoolResponse {
 
 service Holiday {
     rpc IsHoliday (github.com.magaldima.bizday.api.Date) returns (BoolResponse);
-    rpc HolidaysBetween (BinaryDateRequest) returns (github.com.magaldima.bizday.api.NumberOfDaysResponse);
+    rpc Delta (BinaryDateRequest) returns (github.com.magaldima.bizday.api.NumberOfDaysResponse);
 }

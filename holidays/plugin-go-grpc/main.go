@@ -9,11 +9,11 @@ import (
 // Holiday is a real implementation of Holiday
 type Holiday struct{}
 
-func (Holiday) IsHoliday(api.Date) bool {
+func (Holiday) IsHoliday(d api.Date) bool {
 	return false
 }
 
-func (Holiday) HolidaysBetween(api.Date, api.Date) int32 {
+func (Holiday) Delta(d1 api.Date, d2 api.Date) int32 {
 	return 0
 }
 
@@ -21,7 +21,7 @@ func main() {
 	plugin.Serve(&plugin.ServeConfig{
 		HandshakeConfig: shared.Handshake,
 		Plugins: map[string]plugin.Plugin{
-			"us-holiday": &shared.HolidayPlugin{Impl: &Holiday{}},
+			"US": &shared.HolidayPlugin{Impl: &Holiday{}},
 		},
 		GRPCServer: plugin.DefaultGRPCServer,
 	})

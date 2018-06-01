@@ -4,6 +4,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/magaldima/bizday/calendar"
+
 	"github.com/hashicorp/go-plugin"
 
 	api "github.com/magaldima/bizday/api"
@@ -16,16 +18,22 @@ import (
 
 // server implements the bizday API
 type server struct {
-	holidayRegistry holidayCalendarRegistry
+	calendarRegistry calendarRegistry
+	holidayRegistry  holidayRegistry
 }
 
 // New creates a new server
-func New(holidayProtocol plugin.ClientProtocol) api.DateCalcServer {
+func New(calendarProtocol plugin.ClientProtocol, holidayProtocol plugin.ClientProtocol) api.DateCalcServer {
 	return &server{
-		holidayRegistry: holidayCalendarRegistry{
-			source:      holidayProtocol,
-			mu:          sync.Mutex{},
-			holidayCals: make(map[string]shared.Holiday),
+		calendarRegistry: calendarRegistry{
+			source:    calendarProtocol,
+			mu:        sync.Mutex{},
+			calendars: make(map[string]calendar.Calendar),
+		},
+		holidayRegistry: holidayRegistry{
+			source:   holidayProtocol,
+			mu:       sync.Mutex{},
+			holidays: make(map[string]shared.Holiday),
 		},
 	}
 }
@@ -35,11 +43,11 @@ func (s *server) BizDaysBetween(ctx context.Context, req *api.BinaryDateRequest)
 	total := datecalc.CalendarDaysBetween(req.Start.Time(), req.End.Time())
 	weekends := datecalc.WeekendDaysBetween(req.Start.Time(), req.End.Time())
 	// get holiday plugin
-	holiday, err := s.getHolidayCalendar(req.Cal.Name)
+	holiday, err := s.getHoliday(req.Cal.Holiday)
 	if err != nil {
 		return nil, err
 	}
-	holidays := holiday.HolidaysBetween(*req.Start, *req.End)
+	holidays := holiday.Delta(*req.Start, *req.End)
 	return &api.NumberOfDaysResponse{Days: total - weekends - holidays}, nil
 }
 
@@ -58,11 +66,11 @@ func (s *server) WeekendsBetween(ctx context.Context, req *api.BinaryDateRequest
 // HolidaysBetween returns the number of holiday dates between a pair of dates
 func (s *server) HolidaysBetween(ctx context.Context, req *api.BinaryDateRequest) (*api.NumberOfDaysResponse, error) {
 	// get holiday plugin
-	holiday, err := s.getHolidayCalendar(req.Cal.Name)
+	holiday, err := s.getHoliday(req.Cal.Holiday)
 	if err != nil {
 		return nil, err
 	}
-	holidays := holiday.HolidaysBetween(*req.Start, *req.End)
+	holidays := holiday.Delta(*req.Start, *req.End)
 	return &api.NumberOfDaysResponse{Days: holidays}, nil
 }
 
@@ -88,11 +96,11 @@ func (s *server) BizDaysInMonth(ctx context.Context, req *api.UnaryDateRequest) 
 	weekends := datecalc.WeekendDaysBetween(start, end)
 
 	// get holiday plugin
-	holiday, err := s.getHolidayCalendar(req.Cal.Name)
+	holiday, err := s.getHoliday(req.Cal.Holiday)
 	if err != nil {
 		return nil, err
 	}
-	holidays := holiday.HolidaysBetween(startDate, endDate)
+	holidays := holiday.Delta(startDate, endDate)
 	return &api.NumberOfDaysResponse{Days: total - weekends - holidays}, nil
 }
 
@@ -116,11 +124,11 @@ func (s *server) BizDaysInYear(ctx context.Context, req *api.UnaryDateRequest) (
 	}
 
 	// get holiday plugin
-	holiday, err := s.getHolidayCalendar(req.Cal.Name)
+	holiday, err := s.getHoliday(req.Cal.Holiday)
 	if err != nil {
 		return nil, err
 	}
-	holidays := holiday.HolidaysBetween(startDate, endDate)
+	holidays := holiday.Delta(startDate, endDate)
 
 	return &api.NumberOfDaysResponse{Days: total - weekends - holidays}, nil
 }

@@ -4,11 +4,9 @@ import (
 	"context"
 	"net/rpc"
 
-	api "github.com/magaldima/bizday/api"
-
-	"github.com/magaldima/bizday/holidays"
-
 	"github.com/hashicorp/go-plugin"
+	api "github.com/magaldima/bizday/api"
+	"github.com/magaldima/bizday/holidays"
 	"google.golang.org/grpc"
 )
 
@@ -21,14 +19,14 @@ var Handshake = plugin.HandshakeConfig{
 
 // PluginMap is the map of plugins we can dispense.
 var PluginMap = map[string]plugin.Plugin{
-	"us-holiday": &HolidayPlugin{},
+	"US": &HolidayPlugin{},
 	//todo: add more plugin here for all different types of calendars
 }
 
 // Holiday is the interface that we're exposing as a plugin.
 type Holiday interface {
 	IsHoliday(api.Date) bool
-	HolidaysBetween(api.Date, api.Date) int32
+	Delta(api.Date, api.Date) int32
 }
 
 // HolidayPlugin is the implementation of plugin.Plugin so we can serve/consume this.

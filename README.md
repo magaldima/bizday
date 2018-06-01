@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/magaldima/bizday.svg?branch=master)](https://travis-ci.org/magaldima/bizday)
 # Bizday
 plugin based business calendar microservice exposes a `gRPC` API to perform complex business date and time calculation logic.
 

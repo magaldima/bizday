@@ -1,22 +1,22 @@
-package pkg
+package github_com_magaldima_bizday_api
 
 import (
-	"fmt"
+	fmt "fmt"
 	"time"
 
 	"github.com/rickb777/date"
 )
 
-func (d *Date) date() date.Date {
-	return date.New(int(d.Year), getTimeMonth(d), int(d.Day))
+func (d *Date) Date() date.Date {
+	return date.New(int(d.Year), GetTimeMonth(d), int(d.Day))
 }
 
-func (d *Date) time() time.Time {
-	return time.Date(int(d.Year), getTimeMonth(d), int(d.Day), 0, 0, 0, 0, time.UTC)
+func (d *Date) Time() time.Time {
+	return time.Date(int(d.Year), GetTimeMonth(d), int(d.Day), 0, 0, 0, 0, time.UTC)
 }
 
 // helper function to find the golang time Month from the protocol buffer date
-func getTimeMonth(d *Date) time.Month {
+func GetTimeMonth(d *Date) time.Month {
 	switch d.Month {
 	case Month_January:
 		return time.January
@@ -47,7 +47,7 @@ func getTimeMonth(d *Date) time.Month {
 	}
 }
 
-func getDateMonth(t time.Time) Month {
+func GetDateMonth(t time.Time) Month {
 	switch t.Month() {
 	case time.January:
 		return Month_January
@@ -78,10 +78,10 @@ func getDateMonth(t time.Time) Month {
 	}
 }
 
-func convertToProtoDate(t time.Time) *Date {
+func ConvertToProtoDate(t time.Time) *Date {
 	return &Date{
 		Year:  int32(t.Year()),
-		Month: getDateMonth(t),
+		Month: GetDateMonth(t),
 		Day:   int32(t.Day()),
 	}
 }

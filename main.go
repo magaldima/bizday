@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 
+	api "github.com/magaldima/bizday/api"
 	"github.com/magaldima/bizday/pkg"
 
 	"google.golang.org/grpc"
@@ -25,7 +26,7 @@ func main() {
 		panic(err)
 	}
 	grpcServer := grpc.NewServer()
-	pkg.RegisterDateCalcServer(grpcServer, &pkg.Server{})
+	api.RegisterDateCalcServer(grpcServer, &pkg.Server{})
 	// use TLS
 	log.Printf("starting bizday server on port %d", port)
 	grpcServer.Serve(lis)

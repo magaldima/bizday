@@ -1,5 +1,5 @@
 syntax = "proto3";
-package pkg;
+package github.com.magaldima.bizday.api;
 
 enum WeekDays {
     Sunday = 0;

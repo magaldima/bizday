@@ -19,13 +19,19 @@ var Handshake = plugin.HandshakeConfig{
 	MagicCookieValue: "holiday",
 }
 
+// PluginMap is the map of plugins we can dispense.
+var PluginMap = map[string]plugin.Plugin{
+	"us-holiday": &HolidayPlugin{},
+	//todo: add more plugin here for all different types of calendars
+}
+
 // Holiday is the interface that we're exposing as a plugin.
 type Holiday interface {
 	IsHoliday(api.Date) bool
 	HolidaysBetween(api.Date, api.Date) int32
 }
 
-// This is the implementation of plugin.Plugin so we can serve/consume this.
+// HolidayPlugin is the implementation of plugin.Plugin so we can serve/consume this.
 // We also implement GRPCPlugin so that this plugin can be served over
 // gRPC.
 type HolidayPlugin struct {

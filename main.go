@@ -5,6 +5,12 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
+	"os/exec"
+
+	"github.com/magaldima/bizday/holidays/shared"
+
+	"github.com/hashicorp/go-plugin"
 
 	api "github.com/magaldima/bizday/api"
 	"github.com/magaldima/bizday/pkg"
@@ -21,12 +27,27 @@ func init() {
 func main() {
 	flag.Parse()
 
+	client := plugin.NewClient(&plugin.ClientConfig{
+		HandshakeConfig: shared.Handshake,
+		Plugins:         shared.PluginMap,
+		Cmd:             exec.Command("sh", "-c", os.Getenv("HOLIDAY_PLUGIN")),
+		AllowedProtocols: []plugin.Protocol{
+			plugin.ProtocolNetRPC, plugin.ProtocolGRPC,
+		},
+	})
+	defer client.Kill()
+
+	rpcClient, err := client.Client()
+	if err != nil {
+		panic(err)
+	}
+
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		panic(err)
 	}
 	grpcServer := grpc.NewServer()
-	api.RegisterDateCalcServer(grpcServer, &pkg.Server{})
+	api.RegisterDateCalcServer(grpcServer, pkg.New(rpcClient))
 	// use TLS
 	log.Printf("starting bizday server on port %d", port)
 	grpcServer.Serve(lis)

@@ -26,13 +26,13 @@ func main() {
 		},
 		Start: &api.Date{
 			Year:  2018,
-			Month: api.Month_May,
-			Day:   10,
+			Month: api.Month_January,
+			Day:   1,
 		},
 		End: &api.Date{
 			Year:  2018,
-			Month: api.Month_August,
-			Day:   5,
+			Month: api.Month_December,
+			Day:   31,
 		},
 	}
 	resp, err := client.HolidaysBetween(context.Background(), &binaryDateRequest)

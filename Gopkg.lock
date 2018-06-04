@@ -8,6 +8,19 @@
   version = "v1.1.0"
 
 [[projects]]
+  name = "github.com/emirpasic/gods"
+  packages = [
+    "containers",
+    "sets",
+    "sets/treeset",
+    "trees",
+    "trees/redblacktree",
+    "utils"
+  ]
+  revision = "f6c17b524822278a87e3b3bd809fec33b51f5b46"
+  version = "v1.9.0"
+
+[[projects]]
   name = "github.com/golang/protobuf"
   packages = [
     "proto",
@@ -159,6 +172,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "cfc188c9c0faf4a3ba52ee1e40ba2e93ceeb6cb02ca94af3dd74dbb0a100146f"
+  inputs-digest = "fe27f2c95de1d3fe20eb564990adf225f9d2acc6b6dbbdb3538f53ac4df67b2f"
   solver-name = "gps-cdcl"
   solver-version = 1

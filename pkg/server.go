@@ -4,12 +4,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/magaldima/bizday/calendar"
+	"github.com/magaldima/bizday/dcb"
+	"github.com/magaldima/bizday/holiday"
 
 	"github.com/hashicorp/go-plugin"
 
 	api "github.com/magaldima/bizday/api"
-	"github.com/magaldima/bizday/holidays/shared"
 
 	"github.com/magaldima/bizday/datecalc"
 	"github.com/rickb777/date"
@@ -18,24 +18,39 @@ import (
 
 // server implements the bizday API
 type server struct {
-	calendarRegistry calendarRegistry
-	holidayRegistry  holidayRegistry
+	dcbRegistry     dcbRegistry
+	holidayRegistry holidayRegistry
 }
 
 // New creates a new server
-func New(calendarProtocol plugin.ClientProtocol, holidayProtocol plugin.ClientProtocol) api.DateCalcServer {
+func New(dcbProtocol plugin.ClientProtocol, holidayProtocol plugin.ClientProtocol) api.DateCalcServer {
 	return &server{
-		calendarRegistry: calendarRegistry{
-			source:    calendarProtocol,
-			mu:        sync.Mutex{},
-			calendars: make(map[string]calendar.Calendar),
+		dcbRegistry: dcbRegistry{
+			source: dcbProtocol,
+			mu:     sync.Mutex{},
+			dcbs:   make(map[string]dcb.DayCountBasis),
 		},
 		holidayRegistry: holidayRegistry{
 			source:   holidayProtocol,
 			mu:       sync.Mutex{},
-			holidays: make(map[string]shared.Holiday),
+			holidays: make(map[string]holiday.Holiday),
 		},
 	}
+}
+
+// DaysBetween returns the number of days between a pair of dates using the day count basis (DCB)
+func (s *server) DaysBetween(ctx context.Context, req *api.BinaryDateRequest) (*api.NumberOfDaysResponse, error) {
+	days, err := s.daysBetween(req.Cal.DayCountBasis, req.Start.Time(), req.End.Time())
+	if err != nil {
+		return nil, err
+	}
+	return &api.NumberOfDaysResponse{Days: days}, nil
+}
+
+// CalendarDaysBetween returns the number of days between a pair of dates using the calendar
+func (s *server) CalendarDaysBetween(ctx context.Context, req *api.BinaryDateRequest) (*api.NumberOfDaysResponse, error) {
+	days := datecalc.CalendarDaysBetween(req.Start.Time(), req.End.Time())
+	return &api.NumberOfDaysResponse{Days: days}, nil
 }
 
 // BizDaysBetween returns the number of business day dates between a pair of dates
@@ -47,7 +62,10 @@ func (s *server) BizDaysBetween(ctx context.Context, req *api.BinaryDateRequest)
 	if err != nil {
 		return nil, err
 	}
-	holidays := holiday.Delta(*req.Start, *req.End)
+	holidays, err := holiday.Delta(req.Start.Time(), req.End.Time())
+	if err != nil {
+		return nil, err
+	}
 	return &api.NumberOfDaysResponse{Days: total - weekends - holidays}, nil
 }
 
@@ -70,7 +88,10 @@ func (s *server) HolidaysBetween(ctx context.Context, req *api.BinaryDateRequest
 	if err != nil {
 		return nil, err
 	}
-	holidays := holiday.Delta(*req.Start, *req.End)
+	holidays, err := holiday.Delta(req.Start.Time(), req.End.Time())
+	if err != nil {
+		return nil, err
+	}
 	return &api.NumberOfDaysResponse{Days: holidays}, nil
 }
 
@@ -81,17 +102,6 @@ func (s *server) BizDaysInMonth(ctx context.Context, req *api.UnaryDateRequest) 
 	start := datecalc.Date(int(req.Date.Year), month, 0)
 	end := datecalc.Date(int(req.Date.Year), month, lastDay)
 
-	startDate := api.Date{
-		Year:  req.Date.Year,
-		Month: req.Date.Month,
-		Day:   1,
-	}
-	endDate := api.Date{
-		Year:  req.Date.Year,
-		Month: req.Date.Month,
-		Day:   int32(lastDay),
-	}
-
 	total := datecalc.CalendarDaysBetween(start, end)
 	weekends := datecalc.WeekendDaysBetween(start, end)
 
@@ -100,7 +110,10 @@ func (s *server) BizDaysInMonth(ctx context.Context, req *api.UnaryDateRequest) 
 	if err != nil {
 		return nil, err
 	}
-	holidays := holiday.Delta(startDate, endDate)
+	holidays, err := holiday.Delta(start, end)
+	if err != nil {
+		return nil, err
+	}
 	return &api.NumberOfDaysResponse{Days: total - weekends - holidays}, nil
 }
 
@@ -112,31 +125,30 @@ func (s *server) BizDaysInYear(ctx context.Context, req *api.UnaryDateRequest) (
 	total := datecalc.CalendarDaysBetween(start, end)
 	weekends := datecalc.WeekendDaysBetween(start, end)
 
-	startDate := api.Date{
-		Year:  req.Date.Year,
-		Month: api.Month_January,
-		Day:   1,
-	}
-	endDate := api.Date{
-		Year:  int32(end.Year()),
-		Month: api.Month_January,
-		Day:   1,
-	}
-
 	// get holiday plugin
 	holiday, err := s.getHoliday(req.Cal.Holiday)
 	if err != nil {
 		return nil, err
 	}
-	holidays := holiday.Delta(startDate, endDate)
-
+	holidays, err := holiday.Delta(start, end)
+	if err != nil {
+		return nil, err
+	}
 	return &api.NumberOfDaysResponse{Days: total - weekends - holidays}, nil
 }
 
 // IsBizDay returns true if the date provided is a business day
 func (s *server) IsBizDay(ctx context.Context, req *api.UnaryDateRequest) (*api.UnaryBoolResponse, error) {
 	d := datecalc.Date(int(req.Date.Year), api.GetTimeMonth(req.Date), int(req.Date.Day))
-	return &api.UnaryBoolResponse{Ok: datecalc.IsBusinessDay(d)}, nil
+	holiday, err := s.getHoliday(req.Cal.Holiday)
+	if err != nil {
+		return nil, err
+	}
+	res, err := s.isBusinessDay(d, holiday)
+	if err != nil {
+		return nil, err
+	}
+	return &api.UnaryBoolResponse{Ok: res}, nil
 }
 
 func (s *server) IsFirstBizDayOfMonth(context.Context, *api.UnaryDateRequest) (*api.UnaryBoolResponse, error) {
@@ -166,20 +178,41 @@ func (s *server) LastBizDayOfQtr(context.Context, *api.UnaryDateRequest) (*api.U
 // NextBizDay returns the next business day
 func (s *server) NextBizDay(ctx context.Context, req *api.UnaryDateRequest) (*api.UnaryDateResponse, error) {
 	cur := datecalc.Date(int(req.Date.Year), api.GetTimeMonth(req.Date), int(req.Date.Day))
-	next := datecalc.AddBusinessDays(cur, 1)
+	holiday, err := s.getHoliday(req.Cal.Holiday)
+	if err != nil {
+		return nil, err
+	}
+	next, err := s.AddBusinessDays(cur, 1, holiday)
+	if err != nil {
+		return nil, err
+	}
 	return &api.UnaryDateResponse{Date: api.ConvertToProtoDate(next)}, nil
 }
 
 // PrevBizDay returns the previous business day
 func (s *server) PrevBizDay(ctx context.Context, req *api.UnaryDateRequest) (*api.UnaryDateResponse, error) {
 	cur := datecalc.Date(int(req.Date.Year), api.GetTimeMonth(req.Date), int(req.Date.Day))
-	prev := datecalc.AddBusinessDays(cur, -1)
+	holiday, err := s.getHoliday(req.Cal.Holiday)
+	if err != nil {
+		return nil, err
+	}
+	prev, err := s.AddBusinessDays(cur, -1, holiday)
+	if err != nil {
+		return nil, err
+	}
 	return &api.UnaryDateResponse{Date: api.ConvertToProtoDate(prev)}, nil
 }
 
 // AddBizDays returns the business day that corresponds to the transformation of the given date by the given offset
 func (s *server) AddBizDays(ctx context.Context, req *api.UnaryTransformRequest) (*api.UnaryDateResponse, error) {
 	cur := datecalc.Date(int(req.Date.Year), api.GetTimeMonth(req.Date), int(req.Date.Day))
-	updated := datecalc.AddBusinessDays(cur, int(req.Offset))
+	holiday, err := s.getHoliday(req.Cal.Holiday)
+	if err != nil {
+		return nil, err
+	}
+	updated, err := s.AddBusinessDays(cur, int(req.Offset), holiday)
+	if err != nil {
+		return nil, err
+	}
 	return &api.UnaryDateResponse{Date: api.ConvertToProtoDate(updated)}, nil
 }

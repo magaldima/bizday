@@ -1,0 +1,36 @@
+syntax = "proto3";
+package dcb;
+
+import "google/protobuf/timestamp.proto";
+
+// BinaryDateRequest contains two timestamps that indicate a range in time
+message BinaryDateRequest {
+    google.protobuf.Timestamp start = 1;
+    google.protobuf.Timestamp end = 2;
+}
+
+// DayCountFractionResponse returns the dcb fraction result
+message DayCountFractionResponse {
+    double value = 1;
+}
+
+// NumberOfDaysResponse contains a single field 'value' which indicates the number of days
+message NumberOfDaysResponse {
+    int32 value = 1;
+}
+
+// DayCountBasis exposes the basic functions for dealing with day count basis functions
+service DayCountBasis {
+    // DaysInYear computes the number of days in the year of the provided timestamp
+    rpc DaysInYear(google.protobuf.Timestamp) returns (NumberOfDaysResponse);
+
+    // DaysInMonth computes the number of days in the month of the provided timestamp
+    rpc DaysInMonth(google.protobuf.Timestamp) returns (NumberOfDaysResponse);
+
+    // Delta computes the number of days between the pair of provided dates
+    rpc Delta(BinaryDateRequest) returns (NumberOfDaysResponse);
+
+    // Alpha computes the day count fraction.
+    // The exact implementation depends on the DCB can be with a fixed or variable denominator
+    rpc Alpha(BinaryDateRequest) returns (DayCountFractionResponse);
+}

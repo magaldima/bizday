@@ -1,60 +1,86 @@
 package pkg
 
 import (
-	api "github.com/magaldima/bizday/api"
-	"github.com/magaldima/bizday/datecalc"
+	"time"
+
+	"github.com/magaldima/bizday/holiday"
 )
 
-func (s *server) DaysBetween(dcb string, d1 api.Date, d2 api.Date) (int32, error) {
-	cal, err := s.getCalendar(dcb)
+// DateTime returns the Time corresponding to
+//	yyyy-mm-dd 00:00:00 + 0 nanoseconds
+// in Universal Coordinated Time (UTC)
+func DateTime(year int, month time.Month, day int) time.Time {
+	return time.Date(year, month, day, 0, 0, 0, 0, time.UTC)
+}
+
+func (s *server) daysBetween(dcb string, d1, d2 time.Time) (int32, error) {
+	cal, err := s.getDCB(dcb)
 	if err != nil {
 		return 0, err
 	}
-	return cal.Delta(d1, d2), nil
+	return cal.Delta(d1, d2)
 }
 
-func (s *server) AddDaysUsingDCB(dcb string, date api.Date, days int32) (api.Date, error) {
-	d := datecalc.Date(int(date.Year), api.GetTimeMonth(&date), int(date.Day))
-
-	cal, err := s.getCalendar(dcb)
+func (s *server) AddDaysUsingDCB(dcb string, d time.Time, days int32) (time.Time, error) {
+	cal, err := s.getDCB(dcb)
 	if err != nil {
-		return api.Date{}, err
+		return time.Time{}, err
 	}
-	daysInMonth := cal.DaysInMonth(date)
+	daysInMonth, err := cal.DaysInMonth(d)
+	if err != nil {
+		return time.Time{}, err
+	}
 	monthsToAdd := int(days / daysInMonth)
 	daysToAdd := int(days % daysInMonth)
 
 	res := d.AddDate(0, monthsToAdd, daysToAdd)
-
-	return *api.ConvertToProtoDate(res), nil
+	return res, nil
 }
 
-// AlphaFixed computes the day count fraction with constant denominator
-func (s *server) AlphaFixed(dcb string, d1 api.Date, d2 api.Date) (float64, error) {
-	cal, err := s.getCalendar(dcb)
-	if err != nil {
-		return 0, err
+// AddBusinessDays adds n business days to time t and returns the new time
+// n can be positive or negative depending on incrementing or decrementing the days
+func (s *server) AddBusinessDays(curr time.Time, n int, holiday holiday.Holiday) (time.Time, error) {
+	if n == 0 {
+		return curr, nil
 	}
-	delta := cal.Delta(d1, d2)
-	den := cal.DaysInYear(d1)
-	return float64(delta) / float64(den), nil
+
+	var dir int
+	if n < 0 {
+		dir = -1
+		n = -n
+	} else {
+		dir = 1
+	}
+
+	var next time.Time
+	count := 0
+	for count < n {
+		next = curr.AddDate(0, 0, dir) // add one calendar interval at a time
+		ok, err := s.isBusinessDay(next, holiday)
+		if err != nil {
+			return next, err
+		}
+		if ok {
+			count++
+		}
+		curr = next
+	}
+	return next, nil
 }
 
-// AlphaVariable computes the day count fraction with variable denominator
-func (s *server) AlphaVariable(dcb string, d1 api.Date, d2 api.Date) (float64, error) {
-	cal, err := s.getCalendar(dcb)
+// IsBusinessDay returns true if the day provided is a business day
+func (s *server) isBusinessDay(t time.Time, holiday holiday.Holiday) (bool, error) {
+	isHoliday, err := holiday.IsHoliday(t)
 	if err != nil {
-		return 0, err
+		return false, err
 	}
-	diy1 := int(cal.DaysInYear(d1))
-	diy2 := int(cal.DaysInYear(d2))
+	return !(isWeekendDay(t.Weekday()) || isHoliday), nil
+}
 
-	d1a := datecalc.Date(int(d1.Year), api.GetTimeMonth(&d1), int(d1.Day))
-	d2a := datecalc.Date(int(d2.Year), api.GetTimeMonth(&d2), int(d2.Day))
-
-	doy1 := d1a.YearDay()
-	doy2 := d2a.YearDay()
-
-	frac := float64(diy1*doy2-diy2*doy1) / float64(diy1*diy2)
-	return float64(d2.Year-d1.Year) + frac, nil
+// IsWeekendDay returns true if the day provided is either Saturday or Sunday
+func isWeekendDay(day time.Weekday) bool {
+	if day == time.Saturday || day == time.Sunday {
+		return true
+	}
+	return false
 }

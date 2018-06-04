@@ -1,12 +1,11 @@
-package shared
+package holiday
 
 import (
 	"context"
 	"net/rpc"
+	"time"
 
 	"github.com/hashicorp/go-plugin"
-	api "github.com/magaldima/bizday/api"
-	"github.com/magaldima/bizday/holidays"
 	"google.golang.org/grpc"
 )
 
@@ -25,8 +24,8 @@ var PluginMap = map[string]plugin.Plugin{
 
 // Holiday is the interface that we're exposing as a plugin.
 type Holiday interface {
-	IsHoliday(api.Date) bool
-	Delta(api.Date, api.Date) int32
+	IsHoliday(time.Time) (bool, error)
+	Delta(time.Time, time.Time) (int32, error)
 }
 
 // HolidayPlugin is the implementation of plugin.Plugin so we can serve/consume this.
@@ -47,10 +46,10 @@ func (*HolidayPlugin) Client(b *plugin.MuxBroker, c *rpc.Client) (interface{}, e
 }
 
 func (p *HolidayPlugin) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server) error {
-	holidays.RegisterHolidayServer(s, &GRPCServer{Impl: p.Impl})
+	RegisterHolidayServer(s, &GRPCServer{Impl: p.Impl})
 	return nil
 }
 
 func (p *HolidayPlugin) GRPCClient(ctx context.Context, broker *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
-	return &GRPCClient{client: holidays.NewHolidayClient(c)}, nil
+	return &GRPCClient{client: NewHolidayClient(c)}, nil
 }

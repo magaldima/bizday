@@ -9,14 +9,14 @@ plugin based business calendar microservice exposes a `gRPC` API to perform comp
 ## Getting Started
 1. Build example holiday plugin and set holiday plugin env var
 ```
-$ go build -o dist/holiday-go-grpc ./holidays/plugin-go-grpc
+$ go build -o dist/holiday-go-grpc ./holiday/plugin-go-grpc
 $ export HOLIDAY_PLUGIN="./dist/holiday-go-grpc"
 ```
 
-2. Build example calendar plugin and set calendar plugin env var
+2. Build example day count basis plugin and set dcb plugin env var
 ```
-$ go build -o dist/calendar-go-grpc ./calendar/plugin-go-grpc
-$ export CALENDAR_PLUGIN="./dist/calendar-go-grpc"
+$ go build -o dist/dcb-go-grpc ./dcb/plugin-go-grpc
+$ export DCB_PLUGIN="./dist/dcb-go-grpc"
 ```
 
 3. Run the server

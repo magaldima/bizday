@@ -1,0 +1,29 @@
+syntax = "proto3";
+package holiday;
+
+import "google/protobuf/timestamp.proto";
+
+// BinaryDateRequest contains two timestamps that indicate a range in time
+message BinaryDateRequest {
+    google.protobuf.Timestamp start = 1;
+    google.protobuf.Timestamp end = 2;
+}
+
+// BoolResponse contains a single field 'ok' which indicates the boolean result
+message BoolResponse {
+    bool ok = 1;
+}
+
+// NumberOfDaysResponse contains a single field 'value' which indicates the number of days
+message NumberOfDaysResponse {
+    int32 value = 1;
+}
+
+// Holiday is a service to expose basic custom holiday calendar functions
+service Holiday {
+    // IsHoliday returns true in the response if the provided date is a holiday
+    rpc IsHoliday (google.protobuf.Timestamp) returns (BoolResponse);
+
+    // Delta returns the number of holiday dates between the provided pair of dates
+    rpc Delta (BinaryDateRequest) returns (NumberOfDaysResponse);
+}

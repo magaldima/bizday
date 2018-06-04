@@ -73,6 +73,12 @@ message UnaryTransformRequest {
 
 service DateCalc {
 
+    // DaysBetween calculates the number of days between two dates using the proper day count basis (DCB)
+    rpc DaysBetween (BinaryDateRequest) returns (NumberOfDaysResponse);
+
+    // CalendarDaysBetween calculates the number of days between two dates using the calendar, not the day count basis.
+    rpc CalendarDaysBetween (BinaryDateRequest) returns (NumberOfDaysResponse);
+
     // Calculates the number of business days between two dates.
     // This operates like array operations and is inclusive of the start and exclusive of the end.
     rpc BizDaysBetween (BinaryDateRequest) returns (NumberOfDaysResponse);

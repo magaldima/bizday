@@ -4,16 +4,16 @@ import (
 	"sync"
 
 	plugin "github.com/hashicorp/go-plugin"
-	"github.com/magaldima/bizday/holidays/shared"
+	"github.com/magaldima/bizday/holiday"
 )
 
 type holidayRegistry struct {
 	source   plugin.ClientProtocol
 	mu       sync.Mutex
-	holidays map[string]shared.Holiday
+	holidays map[string]holiday.Holiday
 }
 
-func (s *server) getHoliday(name string) (shared.Holiday, error) {
+func (s *server) getHoliday(name string) (holiday.Holiday, error) {
 	s.holidayRegistry.mu.Lock()
 	defer s.holidayRegistry.mu.Unlock()
 	if h, ok := s.holidayRegistry.holidays[name]; ok {
@@ -23,7 +23,7 @@ func (s *server) getHoliday(name string) (shared.Holiday, error) {
 	if err != nil {
 		return nil, err
 	}
-	h := raw.(shared.Holiday)
+	h := raw.(holiday.Holiday)
 	// save it into the registry
 	s.holidayRegistry.holidays[name] = h
 	return h, nil

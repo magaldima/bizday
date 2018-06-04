@@ -73,17 +73,6 @@ func WeekdayDaysBetween(t1, t2 time.Time) int32 {
 	return count
 }
 
-// HolidaysBetween returns the number of holidays between two dates
-func HolidaysBetween(t1, t2 time.Time) int32 {
-	//todo
-	return 0
-}
-
-// IsHoliday returns true if the day provided is a holiday
-func IsHoliday(t time.Time) bool {
-	return false
-}
-
 // daysOfWeekBetween returns the number of days of this day between two dates
 // the range is inclusive of the two dates
 // does not assume the dates are properly-ordered
@@ -119,36 +108,4 @@ func IsWeekendDay(day time.Weekday) bool {
 		return true
 	}
 	return false
-}
-
-// IsBusinessDay returns true if the day provided is a business day
-func IsBusinessDay(t time.Time) bool {
-	return !(IsWeekendDay(t.Weekday()) || IsHoliday(t))
-}
-
-// AddBusinessDays adds n business days to time t and returns the new time
-// n can be positive or negative depending on incrementing or decrementing the days
-func AddBusinessDays(curr time.Time, n int) time.Time {
-	if n == 0 {
-		return curr
-	}
-
-	var dir int
-	if n < 0 {
-		dir = -1
-		n = -n
-	} else {
-		dir = 1
-	}
-
-	var next time.Time
-	count := 0
-	for count < n {
-		next = curr.AddDate(0, 0, dir) // add one calendar interval at a time
-		if ok := IsBusinessDay(next); ok {
-			count++
-		}
-		curr = next
-	}
-	return next
 }
